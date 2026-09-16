@@ -1,0 +1,8 @@
+button {
+  font-family: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid #9BE15D;
+  outline-offset: 4px;
+}

@@ -1,0 +1,1 @@
+from .pdf_report import generate_assessment_pdf

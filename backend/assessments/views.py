@@ -41,6 +41,8 @@ from django.utils import timezone
 # ============================================================
 
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -1680,6 +1682,26 @@ class AssessmentDetailView(
 
 
 # ============================================================
+# FULL REPORT VIEW
+# ============================================================
+
+
+class FullReportView(
+    AssessmentDetailView
+):
+    """
+    Token-protected alias for the project brief's full report API.
+    """
+
+    authentication_classes = [
+        TokenAuthentication,
+    ]
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+
+# ============================================================
 # OPTIONAL HEALTH CHECK
 # ============================================================
 #
@@ -1706,9 +1728,7 @@ class HealthCheckView(
     ):
         return Response(
             {
-                "success": True,
-                "service": "SCOUT AI Backend",
-                "status": "running",
+                "status": "ok",
             },
             status=status.HTTP_200_OK,
         )

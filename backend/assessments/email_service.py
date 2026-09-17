@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
@@ -8,6 +9,8 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -16,6 +19,61 @@ from reportlab.platypus import (
     TableStyle,
     PageBreak,
 )
+
+
+PDF_FONT_NAME = "ScoutUnicode"
+
+
+def _register_pdf_font():
+    """Register a Unicode font so PDF text includes the rupee symbol."""
+    if PDF_FONT_NAME in pdfmetrics.getRegisteredFontNames():
+        return
+
+    font_path = Path("C:/Windows/Fonts/arial.ttf")
+    if font_path.exists():
+        pdfmetrics.registerFont(
+            TTFont(PDF_FONT_NAME, str(font_path))
+        )
+        return
+
+    fallback_path = Path("C:/Windows/Fonts/Nirmala.ttc")
+    if fallback_path.exists():
+        pdfmetrics.registerFont(
+            TTFont(
+                PDF_FONT_NAME,
+                str(fallback_path),
+                subfontIndex=0,
+            )
+        )
+        return
+
+    raise FileNotFoundError(
+        "A Unicode TrueType font is required for PDF currency rendering."
+    )
+
+
+def _format_currency(value):
+    """Format an integer-like value with Indian grouping and rupees."""
+    try:
+        amount = int(value or 0)
+    except (TypeError, ValueError):
+        amount = 0
+
+    sign = "-" if amount < 0 else ""
+    digits = str(abs(amount))
+
+    if len(digits) > 3:
+        last_three = digits[-3:]
+        remaining = digits[:-3]
+        groups = []
+
+        while remaining:
+            groups.insert(0, remaining[-2:])
+            remaining = remaining[:-2]
+
+        digits = ",".join(groups + [last_three])
+
+    return f"{sign}₹{digits}"
 
 
 # =========================================================
@@ -41,6 +99,8 @@ def generate_assessment_pdf(
     recommendations = recommendations or []
     roi_estimate = roi_estimate or {}
 
+    _register_pdf_font()
+
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -63,7 +123,7 @@ def generate_assessment_pdf(
     title_style = ParagraphStyle(
         "ReportTitle",
         parent=styles["Title"],
-        fontName="Helvetica-Bold",
+        fontName=PDF_FONT_NAME,
         fontSize=24,
         leading=28,
         textColor=colors.HexColor("#294B63"),
@@ -74,6 +134,7 @@ def generate_assessment_pdf(
     subtitle_style = ParagraphStyle(
         "Subtitle",
         parent=styles["Normal"],
+        fontName=PDF_FONT_NAME,
         fontSize=11,
         textColor=colors.HexColor("#4CAF7A"),
         alignment=TA_CENTER,
@@ -83,7 +144,7 @@ def generate_assessment_pdf(
     section_style = ParagraphStyle(
         "Section",
         parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
+        fontName=PDF_FONT_NAME,
         fontSize=14,
         leading=18,
         textColor=colors.HexColor("#294B63"),
@@ -94,6 +155,7 @@ def generate_assessment_pdf(
     normal_style = ParagraphStyle(
         "NormalCustom",
         parent=styles["Normal"],
+        fontName=PDF_FONT_NAME,
         fontSize=9.5,
         leading=14,
         textColor=colors.HexColor("#333333"),
@@ -102,6 +164,7 @@ def generate_assessment_pdf(
     small_style = ParagraphStyle(
         "Small",
         parent=styles["Normal"],
+        fontName=PDF_FONT_NAME,
         fontSize=8,
         leading=11,
         textColor=colors.HexColor("#666666"),
@@ -110,7 +173,7 @@ def generate_assessment_pdf(
     score_style = ParagraphStyle(
         "Score",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=PDF_FONT_NAME,
         fontSize=30,
         textColor=colors.HexColor("#4CAF7A"),
         alignment=TA_CENTER,
@@ -119,6 +182,7 @@ def generate_assessment_pdf(
     level_style = ParagraphStyle(
         "Level",
         parent=styles["Normal"],
+        fontName=PDF_FONT_NAME,
         fontSize=11,
         textColor=colors.HexColor("#294B63"),
         alignment=TA_CENTER,
@@ -143,7 +207,7 @@ def generate_assessment_pdf(
                     parent=styles["Normal"],
                     fontSize=24,
                     textColor=colors.white,
-                    fontName="Helvetica-Bold",
+                    fontName=PDF_FONT_NAME,
                 ),
             )
         ],
@@ -155,6 +219,7 @@ def generate_assessment_pdf(
                     parent=styles["Normal"],
                     fontSize=10,
                     textColor=colors.HexColor("#8FE0B0"),
+                    fontName=PDF_FONT_NAME,
                 ),
             )
         ],
@@ -196,7 +261,7 @@ def generate_assessment_pdf(
                 "Greeting",
                 parent=normal_style,
                 fontSize=14,
-                fontName="Helvetica-Bold",
+                fontName=PDF_FONT_NAME,
                 textColor=colors.HexColor("#183B56"),
                 spaceAfter=8,
             ),
@@ -265,8 +330,8 @@ def generate_assessment_pdf(
                     (0, -1),
                     colors.HexColor("#294B63"),
                 ),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+                ("FONTNAME", (0, 0), (0, -1), PDF_FONT_NAME),
+                ("FONTNAME", (1, 0), (1, -1), PDF_FONT_NAME),
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
                 ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D9E2E7")),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -376,11 +441,14 @@ def generate_assessment_pdf(
 
     roi_data = [
         ["Hours Saved / Month", str(hours_saved)],
-        ["Hourly Cost", f"₹{hourly_cost}"],
-        ["Monthly Savings", f"₹{monthly_savings}"],
-        ["Annual Savings", f"₹{annual_savings}"],
-        ["Implementation Cost", f"₹{implementation_cost}"],
-        ["Estimated ROI", f"{roi}%"],
+        ["Hourly Cost", _format_currency(hourly_cost)],
+        ["Monthly Savings", _format_currency(monthly_savings)],
+        ["Annual Savings", _format_currency(annual_savings)],
+        ["Implementation Cost", _format_currency(implementation_cost)],
+        [
+            "Estimated ROI",
+            f"{roi_estimate.get('estimated_roi_percentage', roi)}%",
+        ],
     ]
 
     roi_table = Table(
@@ -400,8 +468,8 @@ def generate_assessment_pdf(
                 (
                     "FONTNAME",
                     (0, 0),
-                    (0, -1),
-                    "Helvetica-Bold",
+                    (-1, -1),
+                    PDF_FONT_NAME,
                 ),
                 (
                     "TEXTCOLOR",
@@ -569,14 +637,29 @@ def generate_assessment_pdf(
             )
         )
 
-        for item in quick_wins:
+        for index, item in enumerate(quick_wins, start=1):
+
+            if not isinstance(item, dict):
+                title = str(item)
+                impact = ""
+            else:
+                title = item.get("title", "Quick win")
+                impact = item.get("impact", "")
 
             story.append(
                 Paragraph(
-                    f"• {item}",
+                    f"<b>{index}. {title}</b>",
                     normal_style,
                 )
             )
+
+            if impact:
+                story.append(
+                    Paragraph(
+                        f"Impact: {impact}",
+                        normal_style,
+                    )
+                )
 
             story.append(Spacer(1, 4))
 
@@ -593,34 +676,36 @@ def generate_assessment_pdf(
             )
         )
 
-        for item in recommendations:
+        for index, item in enumerate(recommendations, start=1):
 
             if isinstance(item, dict):
 
-                title = item.get(
-                    "title",
-                    item.get(
-                        "name",
-                        "Recommendation",
-                    ),
-                )
-
-                description = item.get(
-                    "description",
+                recommendation = item.get(
+                    "recommendation",
                     "",
                 )
+                impact = item.get("impact", "")
+                area = item.get("area", "")
 
                 story.append(
                     Paragraph(
-                        f"<b>{title}</b>",
+                        f"<b>{index}. {recommendation}</b>",
                         normal_style,
                     )
                 )
 
-                if description:
+                if impact:
                     story.append(
                         Paragraph(
-                            description,
+                            f"Impact: {impact}",
+                            normal_style,
+                        )
+                    )
+
+                if area:
+                    story.append(
+                        Paragraph(
+                            f"Area: {area}",
                             normal_style,
                         )
                     )

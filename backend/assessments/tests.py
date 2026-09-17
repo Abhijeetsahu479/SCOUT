@@ -5,7 +5,7 @@ from django.core import mail
 from django.test import TestCase, override_settings
 
 from .email_service import send_assessment_report_email
-from .models import Assessment
+from .models import Assessment, Lead
 
 
 @override_settings(
@@ -38,8 +38,30 @@ class AssessmentEmailTests(TestCase):
 			challenge_notes="Approvals take time.",
 		)
 
+		lead = Lead.objects.create(
+			name=assessment.name,
+			email=assessment.email,
+			company_name=assessment.company_name,
+			designation=assessment.designation,
+			industry=assessment.industry,
+			company_size=assessment.company_size,
+			departments_selected=assessment.departments,
+			automation_level=assessment.automation_level,
+			repetitive_activities=assessment.repetitive_activities,
+			workflow_notes=assessment.workflow_notes,
+			challenges=assessment.challenges,
+			challenge_notes=assessment.challenge_notes,
+			consent_given=True,
+			utm_source="google",
+			utm_medium="cpc",
+			utm_campaign="spring_campaign",
+			ip_address="203.0.113.42",
+			full_report_sent=True,
+		)
+
 		send_assessment_report_email(
 			assessment=assessment,
+			lead=lead,
 			readiness_score=72,
 			readiness_level="Growing",
 			department_analysis=[],
@@ -64,6 +86,12 @@ class AssessmentEmailTests(TestCase):
 		)
 		self.assertIn("user@example.com", mail.outbox[1].body)
 		self.assertIn("Example Co", mail.outbox[1].body)
+		self.assertIn("Consent: Yes", mail.outbox[1].body)
+		self.assertIn("UTM Source: google", mail.outbox[1].body)
+		self.assertIn("UTM Medium: cpc", mail.outbox[1].body)
+		self.assertIn("UTM Campaign: spring_campaign", mail.outbox[1].body)
+		self.assertIn("IP Address: 203.0.113.42", mail.outbox[1].body)
+		self.assertIn("Report Status: Full report sent", mail.outbox[1].body)
 		generate_pdf.assert_called_once()
 
 # Create your tests here.

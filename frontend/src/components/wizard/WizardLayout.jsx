@@ -19,31 +19,17 @@ function WizardLayout({
     <main className="min-h-screen bg-[#F7F9F8] text-[#20394B]">
 
       {/* ================= HEADER ================= */}
-      <header className="border-b border-[#20394B]/10 bg-[#2C485E] shadow-sm">
+      <header className="border-b border-[#20394B]/10 bg-[#20394B] shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8 lg:px-10">
 
           {/* Brand */}
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1">
-              <img
-                src="/logo.jpg"
-                alt="CodeGrameen"
-                className="h-full w-full object-contain"
-              />
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-white">
-                CodeGrameen
-              </p>
-
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64C786]">
-                SCOUT AI
-              </p>
-            </div>
-
-          </div>
+          <a href="/" className="flex items-center">
+            <img
+              src="/logo.jpg"
+              alt="CodeGrameen"
+              className="h-20 w-44 object-contain"
+            />
+          </a>
 
           {/* Header badge */}
           <div className="rounded-full border border-[#64C786]/40 bg-[#64C786]/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#64C786]">

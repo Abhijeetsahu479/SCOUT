@@ -706,20 +706,19 @@ def send_assessment_report_email(
     quick_wins=None,
     recommendations=None,
     roi_estimate=None,
+    lead=None,
 ):
     """
-    Send short email with professional PDF report attached.
+    Send SCOUT AI assessment report as PDF attachment and internal lead notification.
     """
 
+    from django.conf import settings
+    from django.core.mail import EmailMultiAlternatives
+
+    from .models import Lead
+
     recipient = assessment.email
-
-    subject = (
-        "SCOUT AI - Your Automation Readiness Report"
-    )
-
-    # =====================================================
-    # GENERATE PDF
-    # =====================================================
+    subject = "SCOUT AI - Your Automation Readiness Report"
 
     pdf_file = generate_assessment_pdf(
         assessment=assessment,
@@ -730,10 +729,6 @@ def send_assessment_report_email(
         recommendations=recommendations,
         roi_estimate=roi_estimate,
     )
-
-    # =====================================================
-    # EMAIL BODY
-    # =====================================================
 
     text_content = f"""
 Hello {assessment.name},
@@ -742,94 +737,11 @@ Thank you for completing the SCOUT AI assessment.
 
 Your Automation Readiness Report is attached to this email as a PDF.
 
-Readiness Score: {readiness_score}/100
-Readiness Level: {readiness_level}
-
-The report includes:
-
-• Company Details
-• Industry
-• Company Size
-• Automation Readiness
-• Estimated Business Impact
-• Department Analysis
-• Automation Opportunities
-• Recommendations
 
 Regards,
 SCOUT AI
 CodeGrameen
 """
-# =====================================================
-# CREATE EMAIL
-# =====================================================
-
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
-
- 
-
-def send_assessment_report_email(
-    assessment,
-    readiness_score,
-    readiness_level,
-    department_analysis=None,
-    quick_wins=None,
-    recommendations=None,
-    roi_estimate=None,
-):
-    """
-    Send SCOUT AI assessment report as PDF attachment.
-    """
-
-    # =====================================================
-    # RECIPIENT
-    # =====================================================
-
-    recipient = assessment.email
-
-    # =====================================================
-    # SUBJECT
-    # =====================================================
-
-    subject = (
-        "SCOUT AI - Your Automation Readiness Report"
-    )
-
-    # =====================================================
-    # GENERATE PDF
-    # =====================================================
-
-    pdf_file = generate_assessment_pdf(
-        assessment=assessment,
-        readiness_score=readiness_score,
-        readiness_level=readiness_level,
-        department_analysis=department_analysis,
-        quick_wins=quick_wins,
-        recommendations=recommendations,
-        roi_estimate=roi_estimate,
-    )
-
-    # =====================================================
-    # EMAIL TEXT
-    # =====================================================
-
-    text_content = f"""
-Hello {assessment.name},
-
-Thank you for completing the SCOUT AI assessment.
-
-Your Automation Readiness Report is attached to this email.
-Please open the attached PDF to view your complete report.
-
-Regards,
-SCOUT AI
-CodeGrameen
-"""
-
-    # =====================================================
-    # CREATE EMAIL
-    # =====================================================
 
     email = EmailMultiAlternatives(
         subject=subject,
@@ -838,18 +750,10 @@ CodeGrameen
         to=[recipient],
     )
 
-    # =====================================================
-    # PDF FILE NAME
-    # =====================================================
-
     pdf_filename = (
         "SCOUT_AI_Automation_Readiness_Report_"
         f"{assessment.id}.pdf"
     )
-
-    # =====================================================
-    # ATTACH PDF
-    # =====================================================
 
     email.attach(
         pdf_filename,
@@ -857,23 +761,27 @@ CodeGrameen
         "application/pdf",
     )
 
-    # =====================================================
-    # SEND EMAIL
-    # =====================================================
+    email.send(fail_silently=False)
 
-    email.send(
-        fail_silently=False
-    )
+    print(f"PDF report sent successfully to {recipient}")
 
-    # =====================================================
-    # SUCCESS
-    # =====================================================
+    if lead is None:
+        lead = Lead.objects.filter(email=assessment.email).first()
 
-    print(
-        f"PDF report sent successfully to {recipient}"
-    ) 
+    consent_value = "Yes" if lead and lead.consent_given else "No"
+    utm_source = getattr(lead, "utm_source", "-") if lead else "-"
+    utm_medium = getattr(lead, "utm_medium", "-") if lead else "-"
+    utm_campaign = getattr(lead, "utm_campaign", "-") if lead else "-"
+    ip_address = getattr(lead, "ip_address", "-") if lead and lead.ip_address else "-"
+    created_at = getattr(lead, "created_at", assessment.created_at) if lead else assessment.created_at
 
-    # Send the submitted lead details to the internal notification inbox.
+    if lead and lead.full_report_sent:
+        report_status = "Full report sent"
+    elif lead and lead.prelim_report_sent:
+        report_status = "Preliminary report sent"
+    else:
+        report_status = "Not sent"
+
     try:
         send_mail(
             subject="SCOUT AI - New Assessment Lead",
@@ -892,6 +800,13 @@ Repetitive Activities: {assessment.repetitive_activities}
 Workflow Notes: {assessment.workflow_notes or '-'}
 Challenges: {assessment.challenges}
 Challenge Notes: {assessment.challenge_notes or '-'}
+Consent: {consent_value}
+UTM Source: {utm_source}
+UTM Medium: {utm_medium}
+UTM Campaign: {utm_campaign}
+IP Address: {ip_address}
+Created At: {created_at}
+Report Status: {report_status}
 Readiness Score: {readiness_score}/100
 Readiness Level: {readiness_level}
 Assessment ID: {assessment.id}
@@ -901,12 +816,7 @@ Assessment ID: {assessment.id}
             fail_silently=False,
         )
 
-        print(
-            "Internal lead notification sent successfully"
-        )
+        print("Internal lead notification sent successfully")
 
     except Exception as error:
-        print(
-            "Internal lead notification failed:",
-            error,
-        )
+        print("Internal lead notification failed:", error)

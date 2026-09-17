@@ -1016,6 +1016,23 @@ def create_or_update_assessment_report(
 # ============================================================
 
 
+def get_lead_report_status(
+    lead,
+):
+    """Return a readable report status for a lead."""
+
+    if not lead:
+        return "Not sent"
+
+    if lead.full_report_sent:
+        return "Full report sent"
+
+    if lead.prelim_report_sent:
+        return "Preliminary report sent"
+
+    return "Not sent"
+
+
 def build_response_data(
     assessment,
     results,
@@ -1248,6 +1265,7 @@ class AssessmentListCreateView(
             send_assessment_report_email(
 
                 assessment=assessment,
+                lead=lead,
 
                 readiness_score=(
                     results["score"]
@@ -1565,8 +1583,18 @@ class AssessmentDetailView(
                     lead.utm_campaign
                 ),
 
+                "ip_address": (
+                    lead.ip_address
+                ),
+
                 "created_at": (
                     lead.created_at
+                ),
+
+                "report_status": (
+                    get_lead_report_status(
+                        lead
+                    )
                 ),
             }
 
@@ -1792,8 +1820,18 @@ class LeadListView(
                     lead.utm_campaign
                 ),
 
+                "ip_address": (
+                    lead.ip_address
+                ),
+
                 "created_at": (
                     lead.created_at
+                ),
+
+                "report_status": (
+                    get_lead_report_status(
+                        lead
+                    )
                 ),
 
                 "full_report_sent": (
@@ -1926,8 +1964,18 @@ class LeadDetailView(
                 lead.utm_campaign
             ),
 
+            "ip_address": (
+                lead.ip_address
+            ),
+
             "created_at": (
                 lead.created_at
+            ),
+
+            "report_status": (
+                get_lead_report_status(
+                    lead
+                )
             ),
 
             "prelim_report_sent": (

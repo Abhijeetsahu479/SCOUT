@@ -106,6 +106,11 @@ function Home({ onStart }) {
 
                 <button
                   type="button"
+                  onClick={() =>
+                    document.getElementById("how-it-works")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
+                  }
                   className="rounded-full border border-[#294B63] bg-white px-8 py-4 text-sm font-semibold text-[#294B63] transition duration-300 hover:bg-[#294B63] hover:text-white"
                 >
                   See How It Works
@@ -319,6 +324,98 @@ function Home({ onStart }) {
               AI-powered business transformation
             </p>
 
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          HOW IT WORKS
+      ===================================================== */}
+      <section
+        id="how-it-works"
+        className="border-t border-[#E5EAEE] bg-[#F7F9FA]"
+      >
+
+        <div className="mx-auto max-w-7xl px-6 py-16 lg:py-20">
+
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#159453]">
+              HOW SCOUT WORKS
+            </p>
+
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#12304A] md:text-4xl">
+              From assessment to practical next steps.
+            </h2>
+
+            <p className="mt-4 text-base leading-7 text-[#4F687A]">
+              SCOUT turns your business inputs into a clear view of where
+              automation can create measurable value.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              {
+                number: "01",
+                title: "Complete Assessment",
+                description:
+                  "Tell us about your company, departments, workflows and challenges.",
+              },
+              {
+                number: "02",
+                title: "Check Readiness",
+                description:
+                  "Get an automation readiness score based on your submitted information.",
+              },
+              {
+                number: "03",
+                title: "Find Opportunities",
+                description:
+                  "Identify departments and workflows where automation can help.",
+              },
+              {
+                number: "04",
+                title: "Get Recommendations",
+                description:
+                  "Receive quick wins, recommendations and indicative ROI estimates.",
+              },
+              {
+                number: "05",
+                title: "Receive Your Report",
+                description:
+                  "Get your SCOUT assessment report and PDF through the existing workflow.",
+              },
+            ].map((step) => (
+              <article
+                key={step.number}
+                className="rounded-2xl border border-[#DCE4E9] bg-white p-5 shadow-sm"
+              >
+                <p className="text-xs font-bold tracking-[0.2em] text-[#20A761]">
+                  STEP {step.number}
+                </p>
+
+                <h3 className="mt-5 text-base font-bold leading-6 text-[#12304A]">
+                  {step.title}
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-[#526B7A]">
+                  {step.description}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10">
+            <button
+              type="button"
+              onClick={onStart}
+              className="rounded-full bg-[#294B63] px-7 py-3.5 text-sm font-bold text-white shadow-md transition duration-300 hover:bg-[#1D3B50] hover:shadow-lg"
+            >
+              Start Assessment →
+            </button>
           </div>
 
         </div>

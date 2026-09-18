@@ -65,7 +65,7 @@ const departments = [
     description: "Campaigns, content & leads",
   },
   {
-    id: "operations_production",
+    id: "operations",
     number: "07",
     icon: "⚙️",
     name: "Operations & Production",
@@ -79,7 +79,7 @@ const departments = [
     description: "Purchasing & vendor workflows",
   },
   {
-    id: "it_helpdesk",
+    id: "it",
     number: "09",
     icon: "💻",
     name: "IT Helpdesk",
@@ -110,6 +110,13 @@ const automationLevels = [
       "Some workflows already use automation.",
   },
   {
+    id: "somewhat_automated",
+    icon: "🔧",
+    title: "Somewhat Automated",
+    description:
+      "Several workflows use automation, but gaps remain.",
+  },
+  {
     id: "highly_automated",
     icon: "🤖",
     title: "Highly Automated",
@@ -130,7 +137,7 @@ const repetitiveActivities = [
     name: "Reporting",
   },
   {
-    id: "email_communication",
+    id: "email",
     icon: "✉️",
     name: "Email & Communication",
   },
@@ -184,14 +191,14 @@ const challenges = [
     description: "Data is entered or moved manually",
   },
   {
-    id: "errors_rework",
+    id: "errors",
     number: "04",
     icon: "⚠️",
     name: "Errors & rework",
     description: "Mistakes create additional manual work",
   },
   {
-    id: "slow_processes",
+    id: "slow_process",
     number: "05",
     icon: "🐌",
     name: "Slow processes",
